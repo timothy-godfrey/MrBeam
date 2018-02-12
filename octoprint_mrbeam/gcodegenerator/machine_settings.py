@@ -13,15 +13,13 @@ def gcode_after_path():
 	return "M05"
 
 gcode_header = """
-$H
-G92 X0 Y0 Z0
+G21
 G90
-M08
 """
 
 gcode_footer = """
 M05
-G0 X500.000 Y400.000
+G0 X00.000 Y00.000
 M09
 M02
 """

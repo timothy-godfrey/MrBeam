@@ -18,6 +18,9 @@ from svg_util import get_path_d, _add_ns, unittouu
 
 from lxml import etree
 
+# TG
+from collections import OrderedDict
+
 class Converter():
 
 	PLACEHOLDER_LASER_ON  = ";_laseron_"
@@ -70,6 +73,12 @@ class Converter():
 				if(key == "vector"):
 					for paramSet in opts['vector']:
 						self.colorParams[paramSet['color']] = paramSet
+				if(key == "noheaders"):
+					if opts[key].lower() == 'false':
+						self.options[key] = False
+					else:
+						self.options[key] = True
+						
 			else:
 				self._log.info("Using default %s = %s" %(key, str(self.options[key])))
 
@@ -94,8 +103,8 @@ class Converter():
 		self.collect_paths()
 
 		for p in self.paths :
-			#print "path", etree.tostring(p)
-			pass
+			print("Path " + p.get('id') )
+# 			pass
 
 		def report_progress(on_progress, on_progress_args, on_progress_kwargs, done, total):
 			if(total == 0):
@@ -201,25 +210,24 @@ class Converter():
 
 			for layer in self.layers :
 				if layer in self.paths :
-					paths_by_color = dict()
-					for path in self.paths[layer] :
-						self._log.info("path %s, %s, stroke: %s, fill: %s, mb:gc: %s" % ( layer.get('id'), path.get('id'), path.get('stroke'), path.get('class'), path.get(_add_ns('gc', 'mb'))[:100] ))
-
-#						if path.get('stroke') is not None: #todo catch None stroke/fill earlier
-#							stroke = path.get('stroke')
-#						elif path.get('fill') is not None:
-#							stroke = path.get('fill')
-#						elif path.get('class') is not None:
-#							stroke = path.get('class')
-#						else:
-#							stroke = 'default'
-							#continue
-
+ 					paths_by_color = OrderedDict()
+ 					for path in self.paths[layer] :
+ 						self._log.info("path %s, %s, stroke: %s, fill: %s, mb:gc:"  % ( layer.get('id'), path.get('id'), path.get('stroke'), path.get('class'))) #, path.get(_add_ns('gc', 'mb'))[:100] ))
+						if path.get('stroke') is not None: #todo catch None stroke/fill earlier
+							stroke = path.get('stroke')
+						elif path.get('fill') is not None:
+							stroke = path.get('fill')
+						elif path.get('class') is not None:
+							stroke = path.get('class')
+						else:
+							stroke = 'default'
+							continue
+ 
 						strokeInfo = self._get_stroke(path)
 						#print('strokeInfo:', strokeInfo)
 						if(strokeInfo['visible'] == False):
 							continue
-
+ 
 						stroke = strokeInfo['color']
 						if "d" not in path.keys() :
 							self._log.error("Warning: One or more paths don't have 'd' parameter")
@@ -231,26 +239,50 @@ class Converter():
 							paths_by_color[stroke].append(path)# += path
 							processedItemCount += 1
 							report_progress(on_progress, on_progress_args, on_progress_kwargs, processedItemCount, itemAmount)
-
-#					curvesD = dict() #diction
-#					for colorKey in paths_by_color.keys():
-#						if colorKey == 'none':
-#							continue
-
-#						curvesD[colorKey] = self._parse_curve(paths_by_color[colorKey], layer)
-
-					#pierce_time = self.options['pierce_time']
+ 
+					curvesD = dict() #diction
+					for colorKey in paths_by_color.keys():
+						if colorKey == 'none':
+							continue
+ 
+						curvesD[colorKey] = self._parse_curve(paths_by_color[colorKey], layer)
+ 
+# 					pierce_time = self.options['pierce_time']
 					layerId = layer.get('id') or '?'
 					pathId = path.get('id') or '?'
+					
+					#TG. Try generating gcode in path order rather than by colour order
+					for path in self.paths[layer]:
+# 							print('p', path)
+						strokeInfo = self._get_stroke(path)
+						curveGCode = ""
+						mbgc = path.get(_add_ns('gc', 'mb'), None)
+						if(mbgc != None):
+							curveGCode = self._use_embedded_gcode(mbgc, colorKey)
+						else:
+							d = path.get('d')
+							csp = cubicsuperpath.parsePath(d)
+							csp = self._apply_transforms(path, csp)
+							curve = self._parse_curve(csp, layer)
+							curveGCode = self._generate_gcode(curve, strokeInfo['color'])
+ 
+ 
+						settings = self.colorParams.get(strokeInfo['color'], {'intensity': -1, 'feedrate': -1, 'passes': 0, 'pierce_time': 0})
+						layerId = layer.get('id') or '?'
+						pathId = path.get('id') or '?'
+						fh.write("; Layer:" + layerId + ", outline of:" + pathId + ", stroke:" + strokeInfo['color'] +', '+str(settings)+"\n")
+						for p in range(0, int(settings['passes'])):
+							fh.write("; pass:%i/%s\n" % (p+1, settings['passes']))
+							fh.write(curveGCode)
 
 					#for each color generate GCode
 					#for colorKey in curvesD.keys():
 					for colorKey in paths_by_color.keys():
 						if colorKey == 'none':
 							continue
-
+ 
 						for path in paths_by_color[colorKey]:
-							print('p', path)
+# 							print('p', path)
 							curveGCode = ""
 							mbgc = path.get(_add_ns('gc', 'mb'), None)
 							if(mbgc != None):
@@ -261,8 +293,8 @@ class Converter():
 								csp = self._apply_transforms(path, csp)
 								curve = self._parse_curve(csp, layer)
 								curveGCode = self._generate_gcode(curve, colorKey)
-
-
+ 
+ 
 							settings = self.colorParams.get(colorKey, {'intensity': -1, 'feedrate': -1, 'passes': 0, 'pierce_time': 0})
 							fh.write("; Layer:" + layerId + ", outline of:" + pathId + ", stroke:" + colorKey +', '+str(settings)+"\n")
 							for p in range(0, int(settings['passes'])):
@@ -276,7 +308,7 @@ class Converter():
 
 	def collect_paths(self):
 		self._log.info( "collect_paths")
-		self.paths = {}
+		self.paths = OrderedDict()
 		self.images = {}
 		self.layers = [self.document.getroot()]
 
@@ -285,7 +317,7 @@ class Converter():
 
 		def recursive_search(g, layer):
 			items = g.getchildren()
-			items.reverse()
+# 			items.reverse()
 			if(len(items) > 0):
 				self._log.debug("recursive search: %i - %s"  %(len(items), g.get("id")))
 
@@ -494,18 +526,18 @@ class Converter():
 			p = self._transform_csp(p, layer)
 
 			### Sort to reduce Rapid distance
-			k = range(1,len(p))
-			keys = [0]
-			while len(k)>0:
-				end = p[keys[-1]][-1][1]
-				dist = None
-				for i in range(len(k)):
-					start = p[k[i]][0][1]
-					dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)	,   dist )
-				keys += [k[dist[1]]]
-				del k[dist[1]]
+# 			k = range(1,len(p))
+# 			keys = [0]
+# 			while len(k)>0:
+# 				end = p[keys[-1]][-1][1]
+# 				dist = None
+# 				for i in range(len(k)):
+# 					start = p[k[i]][0][1]
+# 					dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)	,   dist )
+# 				keys += [k[dist[1]]]
+# 				del k[dist[1]]
 
-			#keys = range(1,len(p)) # debug unsorted.
+			keys = range(0,len(p)) # debug unsorted.
 			for k in keys:
 				subpath = p[k]
 				c += [ [	[subpath[0][1][0],subpath[0][1][1]]   , 'move', 0, 0] ]
