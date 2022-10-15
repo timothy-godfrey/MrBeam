@@ -48,10 +48,13 @@ if __name__ == "__main__":
 		print("using default folder", option_dict['directory'])
 
 	debug_multicolor = [
-		{"passes": "1", "feedrate": "1000", "pierce_time": "0", "color": "#000000", "intensity": "10", "job": 1}, 
-		{"passes": "1", "feedrate": "400", "pierce_time": "0", "color": "#ff0000", "intensity": "1000", "job": 2}, 
-		{"passes": "1", "feedrate": "2000", "pierce_time": "0", "color": "#0000ff", "intensity": "200", "job": 3},
-		{"passes": "1", "feedrate": "10000", "pierce_time": "0", "color": "#eb7d00", "intensity": "500", "job": 4}
+		{"passes": "1", "feedrate": "1500", "pierce_time": "0", "color": "#ff0000", "intensity": "900", "job": 2}, 
+		{"passes": "1", "feedrate": "2500", "pierce_time": "0", "color": "#0000ff", "intensity": "80", "job": 3},
+		{"passes": "1", "feedrate": "20000", "pierce_time": "0", "color": "#ff6600", "intensity": "300", "job": 4},
+		{"passes": "1", "feedrate": "9000", "pierce_time": "0", "color": "#cc0000", "intensity": "350", "job": 4},
+		{"passes": "1", "feedrate": "10000", "pierce_time": "0", "color": "#00ff00", "intensity": "400", "job": 5},
+		{"passes": "4", "feedrate": "5000", "pierce_time": "0", "color": "#c800c8", "intensity": "170", "job": 6},
+		{"passes": "1", "feedrate": "700", "pierce_time": "0", "color": "#700700", "intensity": "700", "job": 7}
 	]
 	
 	params = dict()
@@ -75,7 +78,7 @@ if __name__ == "__main__":
 	e = Converter(params, svg_file)
 	ch = logging.StreamHandler()
 	ch.setLevel(logging.DEBUG)
-	logging.basicConfig(filename='/home/tim/Tools/MrBeam/TestFiles/Converter.log',level=logging.INFO)
+	logging.basicConfig(filename='/home/tim/git/MrBeamPlugin/Converter.log',level=logging.INFO)
 	formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s: %(message)s')
 	ch.setFormatter(formatter)
 	e._log.addHandler(ch)

@@ -5,16 +5,19 @@
 
 def gcode_before_path(intensity = 0):
 	return "\nM03 S"+str(intensity)
+	# return "\nS" + str(intensity)
 
 def gcode_before_path_color(color = '#000000', intensity = '0'):
-	return "\nM03 S%s;%s" % (intensity, color) 
+	return "\nM03 S%s;%s" % (intensity, color)
 
 def gcode_after_path():
 	return "M05"
+	# return ""
 
 gcode_header = """
 G21
 G90
+M03\n
 """
 
 gcode_footer = """
@@ -23,5 +26,3 @@ G0 X00.000 Y00.000
 M09
 M02
 """
-
-

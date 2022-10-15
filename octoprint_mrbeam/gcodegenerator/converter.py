@@ -102,8 +102,8 @@ class Converter():
 		self.calculate_conversion_matrix()
 		self.collect_paths()
 
-		for p in self.paths :
-			print("Path " + p.get('id') )
+# 		for p in self.paths :
+# 			print("Path " + p.get('id') )
 # 			pass
 
 		def report_progress(on_progress, on_progress_args, on_progress_kwargs, done, total):
@@ -136,10 +136,10 @@ class Converter():
 		with open(self._tempfile, 'a') as fh:
 			# write comments to gcode
 			gc_options_str = "; gc_nexgen gc_options: {}\n".format(self.gc_options)
-			fh.write(gc_options_str)
-			fh.write("; created:{}\n".format(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())))
+# 			fh.write(gc_options_str)
+# 			fh.write("; created:{}\n".format(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())))
 			gc_color_str = "; laser params: {}\n".format(self.colorParams)
-			fh.write(gc_color_str)
+# 			fh.write(gc_color_str)
 
 			fh.write(self._get_gcode_header())
 
@@ -210,48 +210,48 @@ class Converter():
 
 			for layer in self.layers :
 				if layer in self.paths :
- 					paths_by_color = OrderedDict()
- 					for path in self.paths[layer] :
- 						self._log.info("path %s, %s, stroke: %s, fill: %s, mb:gc:"  % ( layer.get('id'), path.get('id'), path.get('stroke'), path.get('class'))) #, path.get(_add_ns('gc', 'mb'))[:100] ))
-						if path.get('stroke') is not None: #todo catch None stroke/fill earlier
-							stroke = path.get('stroke')
-						elif path.get('fill') is not None:
-							stroke = path.get('fill')
-						elif path.get('class') is not None:
-							stroke = path.get('class')
-						else:
-							stroke = 'default'
-							continue
- 
-						strokeInfo = self._get_stroke(path)
-						#print('strokeInfo:', strokeInfo)
-						if(strokeInfo['visible'] == False):
-							continue
- 
-						stroke = strokeInfo['color']
-						if "d" not in path.keys() :
-							self._log.error("Warning: One or more paths don't have 'd' parameter")
-							continue
-						if stroke not in paths_by_color.keys() and stroke != 'default':
-							paths_by_color[stroke] = []
-						d = path.get("d")
-						if d != '':
-							paths_by_color[stroke].append(path)# += path
-							processedItemCount += 1
-							report_progress(on_progress, on_progress_args, on_progress_kwargs, processedItemCount, itemAmount)
- 
-					curvesD = dict() #diction
-					for colorKey in paths_by_color.keys():
-						if colorKey == 'none':
-							continue
- 
-						curvesD[colorKey] = self._parse_curve(paths_by_color[colorKey], layer)
- 
-# 					pierce_time = self.options['pierce_time']
-					layerId = layer.get('id') or '?'
-					pathId = path.get('id') or '?'
+#  					paths_by_color = OrderedDict()
+#  					for path in self.paths[layer] :
+# #  						self._log.info("path %s, %s, stroke: %s, fill: %s, mb:gc:"  % ( layer.get('id'), path.get('id'), path.get('stroke'), path.get('class'))) #, path.get(_add_ns('gc', 'mb'))[:100] ))
+# 						if path.get('stroke') is not None: #todo catch None stroke/fill earlier
+# 							stroke = path.get('stroke')
+# 						elif path.get('fill') is not None:
+# 							stroke = path.get('fill')
+# 						elif path.get('class') is not None:
+# 							stroke = path.get('class')
+# 						else:
+# 							stroke = 'default'
+# 							continue
+#  
+# 						strokeInfo = self._get_stroke(path)
+# 						#print('strokeInfo:', strokeInfo)
+# 						if(strokeInfo['visible'] == False):
+# 							continue
+#  
+# 						stroke = strokeInfo['color']
+# 						if "d" not in path.keys() :
+# 							self._log.error("Warning: One or more paths don't have 'd' parameter")
+# 							continue
+# 						if stroke not in paths_by_color.keys() and stroke != 'default':
+# 							paths_by_color[stroke] = []
+# 						d = path.get("d")
+# 						if d != '':
+# 							paths_by_color[stroke].append(path)# += path
+# 							processedItemCount += 1
+# 							report_progress(on_progress, on_progress_args, on_progress_kwargs, processedItemCount, itemAmount)
+#  
+# 					curvesD = dict() #diction
+# 					for colorKey in paths_by_color.keys():
+# 						if colorKey == 'none':
+# 							continue
+#  
+# 						curvesD[colorKey] = self._parse_curve(paths_by_color[colorKey], layer)
+#  
+# # 					pierce_time = self.options['pierce_time']
+# 					layerId = layer.get('id') or '?'
+# 					pathId = path.get('id') or '?'
 					
-					#TG. Try generating gcode in path order rather than by colour order
+					#TG. Generate gcode in document order rather than by colour order
 					for path in self.paths[layer]:
 # 							print('p', path)
 						strokeInfo = self._get_stroke(path)
@@ -270,36 +270,36 @@ class Converter():
 						settings = self.colorParams.get(strokeInfo['color'], {'intensity': -1, 'feedrate': -1, 'passes': 0, 'pierce_time': 0})
 						layerId = layer.get('id') or '?'
 						pathId = path.get('id') or '?'
-						fh.write("; Layer:" + layerId + ", outline of:" + pathId + ", stroke:" + strokeInfo['color'] +', '+str(settings)+"\n")
+# 						fh.write("; Layer:" + layerId + ", outline of:" + pathId + ", stroke:" + strokeInfo['color'] +', '+str(settings)+"\n")
 						for p in range(0, int(settings['passes'])):
-							fh.write("; pass:%i/%s\n" % (p+1, settings['passes']))
+# 							fh.write("; pass:%i/%s\n" % (p+1, settings['passes']))
 							fh.write(curveGCode)
 
 					#for each color generate GCode
 					#for colorKey in curvesD.keys():
-					for colorKey in paths_by_color.keys():
-						if colorKey == 'none':
-							continue
- 
-						for path in paths_by_color[colorKey]:
-# 							print('p', path)
-							curveGCode = ""
-							mbgc = path.get(_add_ns('gc', 'mb'), None)
-							if(mbgc != None):
-								curveGCode = self._use_embedded_gcode(mbgc, colorKey)
-							else:
-								d = path.get('d')
-								csp = cubicsuperpath.parsePath(d)
-								csp = self._apply_transforms(path, csp)
-								curve = self._parse_curve(csp, layer)
-								curveGCode = self._generate_gcode(curve, colorKey)
- 
- 
-							settings = self.colorParams.get(colorKey, {'intensity': -1, 'feedrate': -1, 'passes': 0, 'pierce_time': 0})
-							fh.write("; Layer:" + layerId + ", outline of:" + pathId + ", stroke:" + colorKey +', '+str(settings)+"\n")
-							for p in range(0, int(settings['passes'])):
-								fh.write("; pass:%i/%s\n" % (p+1, settings['passes']))
-								fh.write(curveGCode)
+# 					for colorKey in paths_by_color.keys():
+# 						if colorKey == 'none':
+# 							continue
+#  
+# 						for path in paths_by_color[colorKey]:
+# # 							print('p', path)
+# 							curveGCode = ""
+# 							mbgc = path.get(_add_ns('gc', 'mb'), None)
+# 							if(mbgc != None):
+# 								curveGCode = self._use_embedded_gcode(mbgc, colorKey)
+# 							else:
+# 								d = path.get('d')
+# 								csp = cubicsuperpath.parsePath(d)
+# 								csp = self._apply_transforms(path, csp)
+# 								curve = self._parse_curve(csp, layer)
+# 								curveGCode = self._generate_gcode(curve, colorKey)
+#  
+#  
+# 							settings = self.colorParams.get(colorKey, {'intensity': -1, 'feedrate': -1, 'passes': 0, 'pierce_time': 0})
+# 							fh.write("; Layer:" + layerId + ", outline of:" + pathId + ", stroke:" + colorKey +', '+str(settings)+"\n")
+# 							for p in range(0, int(settings['passes'])):
+# 								fh.write("; pass:%i/%s\n" % (p+1, settings['passes']))
+# 								fh.write(curveGCode)
 
 			fh.write(self._get_gcode_footer())
 
@@ -626,7 +626,7 @@ class Converter():
 ###
 ################################################################################
 	def _generate_gcode(self, curve, color='#000000'):
-		self._log.info( "_generate_gcode()")
+# 		self._log.info( "_generate_gcode()")
 		settings = self.colorParams.get(color, {'intensity': -1, 'feedrate': -1, 'passes': 0, 'pierce_time': 0})
 
 		def c(c):
@@ -646,14 +646,16 @@ class Converter():
 		g = ""
 
 		lg = 'G00'
-		f = "F%s;%s" % (settings['feedrate'], color)
+# 		f = "F%s;%s" % (settings['feedrate'], color) #original
+		f= "F%s" % (settings['feedrate']) #TG
 		for i in range(1, len(curve)):
 			#	Creating Gcode for curve between s=curve[i-1] and si=curve[i] start at s[0] end at s[4]=si[0]
 			s = curve[i - 1]
 			si = curve[i]
 			feed = f if lg not in ['G01', 'G02', 'G03'] else ''
 			if s[1] == 'move':
-				g += "G0" + c(si[0]) + "\n" + machine_settings.gcode_before_path_color(color, settings['intensity']) + "\n"
+# 				g += "G0" + c(si[0]) + "\n" + machine_settings.gcode_before_path_color(color, settings['intensity']) + "\n" #original
+				g += "G0" + c(si[0]) + "\n" + machine_settings.gcode_before_path(settings['intensity']) + "\n" #TG
 				pt = int(settings['pierce_time'])
 				if pt > 0:
 					g += "G4P%.3f\n" % (round(pt / 1000.0, 4))
@@ -711,7 +713,7 @@ class Converter():
 		if(self.options['noheaders']):
 			return ""
 		else:
-			return machine_settings.gcode_header + "G21\n\n"
+			return machine_settings.gcode_header
 
 	def _get_gcode_footer(self):
 		if(self.options['noheaders']):
